@@ -5,11 +5,35 @@
     android:orientation="vertical"
     android:padding="16dp">
     
-    <Button
-        android:id="@+id/btnClearLogs"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/clear_logs" />
+        android:orientation="horizontal">
+        
+        <Button
+            android:id="@+id/btnCopyLogs"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="@string/copy_logs" />
+        
+        <Button
+            android:id="@+id/btnExportLogs"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="@string/export_logs" />
+        
+        <Button
+            android:id="@+id/btnClearLogs"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="@string/clear_logs" />
+    </LinearLayout>
     
     <ScrollView
         android:layout_width="match_parent"
