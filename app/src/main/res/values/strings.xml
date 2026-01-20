@@ -7,11 +7,12 @@
     <string name="input_hint">输入文本或使用 OCR 识别…</string>
     <string name="result_hint">翻译结果将显示在这里</string>
     <string name="save">保存</string>
-    <string name="clear_logs">清空日志</string>
-    <string name="copy_logs">复制日志</string>
-    <string name="export_logs">导出日志</string>
-    <string name="take_photo">拍照识别</string>
-    <string name="pick_image">选择图片</string>
-    <string name="language_japanese">日语</string>
-    <string name="language_korean">韩语</string>
+    <string name="clear_logs">清空</string>
+    <string name="copy_logs">复制</string>
+    <string name="export_logs">导出</string>
+    <string name="take_photo">拍照</string>
+    <string name="pick_image">相册</string>
+    <string name="capture_screen">截屏翻译</string>
+    <string name="start_capture">开始截屏</string>
+    <string name="stop_capture">停止截屏</string>
 </resources>

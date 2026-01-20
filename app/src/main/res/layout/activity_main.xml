@@ -5,18 +5,26 @@
     android:orientation="vertical"
     android:padding="16dp">
     
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorPrimary"
+        android:minHeight="?attr/actionBarSize"
+        android:title="@string/app_name"
+        android:titleTextColor="@android:color/white" />
+    
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:text="OCR 语言"
-        android:textSize="14sp"
         android:textStyle="bold" />
     
     <Spinner
         android:id="@+id/languageSpinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
         android:layout_marginBottom="8dp" />
     
     <LinearLayout
@@ -30,7 +38,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginEnd="4dp"
-            android:text="@string/take_photo" />
+            android:text="@string/take_photo"
+            style="?attr/materialButtonOutlinedStyle" />
         
         <Button
             android:id="@+id/btnPickImage"
@@ -38,17 +47,26 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="4dp"
-            android:text="@string/pick_image" />
+            android:text="@string/pick_image"
+            style="?attr/materialButtonOutlinedStyle" />
     </LinearLayout>
+    
+    <Button
+        android:id="@+id/btnCaptureScreen"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/capture_screen" />
     
     <EditText
         android:id="@+id/inputText"
         android:layout_width="match_parent"
-        android:layout_height="120dp"
+        android:layout_height="100dp"
         android:layout_marginTop="8dp"
         android:gravity="top|start"
         android:hint="@string/input_hint"
-        android:inputType="textMultiLine" />
+        android:inputType="textMultiLine"
+        android:background="@drawable/edit_text_bg" />
     
     <Button
         android:id="@+id/btnTranslate"
@@ -85,7 +103,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginEnd="4dp"
-            android:text="@string/settings" />
+            android:text="@string/settings"
+            style="?attr/materialButtonOutlinedStyle" />
         
         <Button
             android:id="@+id/btnLogs"
@@ -93,6 +112,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="4dp"
-            android:text="@string/logs" />
+            android:text="@string/logs"
+            style="?attr/materialButtonOutlinedStyle" />
     </LinearLayout>
 </LinearLayout>

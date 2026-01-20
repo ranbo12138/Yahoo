@@ -9,13 +9,19 @@ import kotlinx.coroutines.tasks.await
 
 object OcrHelper {
     
-    enum class Language {
-        JAPANESE, KOREAN
-    }
+    enum class Language { JAPANESE, KOREAN }
     
-    suspend fun recognizeText(bitmap: Bitmap, language: Language): String {
+    suspend fun recognizeText(
+        bitmap: Bitmap,
+        language: Language,
+        preprocess: Boolean = true
+    ): String {
         return try {
-            val image = InputImage.fromBitmap(bitmap, 0)
+            val processed = if (preprocess) {
+                ImageProcessor.preprocess(bitmap)
+            } else bitmap
+            
+            val image = InputImage.fromBitmap(processed, 0)
             
             val recognizer = when (language) {
                 Language.JAPANESE -> TextRecognition.getClient(JapaneseTextRecognizerOptions.Builder().build())
@@ -23,13 +29,10 @@ object OcrHelper {
             }
             
             val result = recognizer.process(image).await()
-            val text = result.text
-            
-            Logger.log("OCR识别成功 (${language.name}): ${text.take(50)}...")
-            text
-            
+            Logger.log("OCR成功 (${language.name}): ${result.text.take(50)}...")
+            result.text
         } catch (e: Exception) {
-            Logger.log("OCR识别失败: ${e.message}")
+            Logger.log("OCR失败: ${e.message}")
             throw e
         }
     }

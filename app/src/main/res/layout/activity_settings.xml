@@ -13,7 +13,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="API Key"
-            android:textSize="14sp"
             android:textStyle="bold" />
         
         <EditText
@@ -28,14 +27,13 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="Base URL"
-            android:textSize="14sp"
             android:textStyle="bold" />
         
         <EditText
             android:id="@+id/baseUrlInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="https://x666.me/v1/"
+            android:hint="https://api.openai.com/v1/"
             android:inputType="textUri" />
         
         <TextView
@@ -43,15 +41,33 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="Model"
-            android:textSize="14sp"
             android:textStyle="bold" />
         
         <EditText
             android:id="@+id/modelInput"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="gpt-4.1-mini"
-            android:inputType="text" />
+            android:hint="gpt-4o-mini" />
+        
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="图片预处理（提高识别率）"
+                android:textStyle="bold" />
+            
+            <Switch
+                android:id="@+id/preprocessSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
         
         <Button
             android:id="@+id/btnSave"
