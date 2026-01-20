@@ -5,11 +5,48 @@
     android:orientation="vertical"
     android:padding="16dp">
     
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="OCR 语言"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+    
+    <Spinner
+        android:id="@+id/languageSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="8dp" />
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        
+        <Button
+            android:id="@+id/btnTakePhoto"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="4dp"
+            android:text="@string/take_photo" />
+        
+        <Button
+            android:id="@+id/btnPickImage"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="@string/pick_image" />
+    </LinearLayout>
+    
     <EditText
         android:id="@+id/inputText"
         android:layout_width="match_parent"
         android:layout_height="120dp"
-        android:gravity="top"
+        android:layout_marginTop="8dp"
+        android:gravity="top|start"
         android:hint="@string/input_hint"
         android:inputType="textMultiLine" />
     
@@ -20,16 +57,21 @@
         android:layout_marginTop="8dp"
         android:text="@string/translate" />
     
-    <TextView
-        android:id="@+id/resultText"
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:layout_marginTop="16dp"
-        android:padding="12dp"
-        android:background="#F5F5F5"
-        android:hint="@string/result_hint"
-        android:textSize="16sp" />
+        android:layout_marginTop="8dp">
+        
+        <TextView
+            android:id="@+id/resultText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/result_hint"
+            android:textSize="16sp"
+            android:padding="12dp"
+            android:background="#F5F5F5" />
+    </ScrollView>
     
     <LinearLayout
         android:layout_width="match_parent"

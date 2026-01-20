@@ -4,10 +4,14 @@
     <string name="translate">翻译</string>
     <string name="settings">设置</string>
     <string name="logs">日志</string>
-    <string name="input_hint">输入日文文本…</string>
+    <string name="input_hint">输入文本或使用 OCR 识别…</string>
     <string name="result_hint">翻译结果将显示在这里</string>
     <string name="save">保存</string>
     <string name="clear_logs">清空日志</string>
     <string name="copy_logs">复制日志</string>
     <string name="export_logs">导出日志</string>
+    <string name="take_photo">拍照识别</string>
+    <string name="pick_image">选择图片</string>
+    <string name="language_japanese">日语</string>
+    <string name="language_korean">韩语</string>
 </resources>
