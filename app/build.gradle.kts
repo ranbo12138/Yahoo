@@ -45,11 +45,12 @@ dependencies {
     
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
     
     // ML Kit OCR
     implementation("com.google.mlkit:text-recognition-japanese:16.0.1")
     implementation("com.google.mlkit:text-recognition-korean:16.0.1")
     
-    // CameraX (for camera functionality)
+    // Activity
     implementation("androidx.activity:activity-ktx:1.8.2")
 }

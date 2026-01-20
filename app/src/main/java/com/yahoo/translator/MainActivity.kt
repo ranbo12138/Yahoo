@@ -10,14 +10,14 @@ import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 class MainActivity : AppCompatActivity() {
     private lateinit var languageSpinner: Spinner
     private lateinit var inputText: EditText
     private lateinit var resultText: TextView
     private var selectedLanguage = OcrHelper.Language.JAPANESE
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     
     private val cameraLauncher = registerForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
         bitmap?.let { processImage(it) }
@@ -110,7 +110,7 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun processImage(bitmap: Bitmap) {
-        lifecycleScope.launch {
+        scope.launch {
             try {
                 resultText.text = "识别中..."
                 val text = OcrHelper.recognizeText(bitmap, selectedLanguage)
@@ -137,21 +137,50 @@ class MainActivity : AppCompatActivity() {
             return
         }
         
-        val config = ConfigManager.getConfig(this)
-        if (!config.isValid()) {
+        val prefs = getSharedPreferences("settings", MODE_PRIVATE)
+        val apiKey = prefs.getString("api_key", "") ?: ""
+        val baseUrl = prefs.getString("base_url", "") ?: ""
+        val model = prefs.getString("model", "gpt-4o-mini") ?: "gpt-4o-mini"
+        
+        if (apiKey.isEmpty() || baseUrl.isEmpty()) {
             Toast.makeText(this, "请先在设置中配置 API", Toast.LENGTH_SHORT).show()
             return
         }
         
-        lifecycleScope.launch {
+        resultText.text = "翻译中..."
+        Logger.log("开始翻译: $text")
+        
+        scope.launch {
             try {
-                resultText.text = "翻译中..."
-                val result = TranslationService.translate(text, config)
+                ApiClient.initialize(baseUrl, apiKey)
+                
+                val request = ChatRequest(
+                    model = model,
+                    messages = listOf(
+                        Message("system", "你是专业的翻译。将输入的文本翻译成简体中文，保持口语化，直接输出译文。"),
+                        Message("user", text)
+                    )
+                )
+                
+                val response = withContext(Dispatchers.IO) {
+                    ApiClient.getApi().translate(request)
+                }
+                
+                val result = response.choices.firstOrNull()?.message?.content ?: "翻译失败"
                 resultText.text = result
+                Logger.log("翻译成功: $result")
+                
             } catch (e: Exception) {
-                resultText.text = "翻译失败: ${e.message}"
-                Toast.makeText(this@MainActivity, "翻译失败", Toast.LENGTH_SHORT).show()
+                val error = "错误: ${e.message}"
+                resultText.text = error
+                Logger.log(error)
+                Toast.makeText(this@MainActivity, error, Toast.LENGTH_LONG).show()
             }
         }
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        scope.cancel()
     }
 }
