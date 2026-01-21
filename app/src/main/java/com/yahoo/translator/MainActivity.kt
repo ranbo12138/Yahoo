@@ -67,6 +67,19 @@ class MainActivity : AppCompatActivity() {
         updateCaptureButton()
     }
     
+    override fun onResume() {
+        super.onResume()
+        updateCaptureButton()
+        
+        // 如果截屏服务正在运行，自动截取
+        if (ScreenCaptureService.isRunning) {
+            scope.launch {
+                delay(300)
+                stopCaptureAndProcess()
+            }
+        }
+    }
+    
     private fun setupLanguageSpinner() {
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, arrayOf("日语", "韩语"))
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
@@ -111,6 +124,7 @@ class MainActivity : AppCompatActivity() {
                 requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
             }
         }
+        toast("授权后切换到漫画页面，再返回本APP自动截取")
         val projectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         screenCaptureLauncher.launch(projectionManager.createScreenCaptureIntent())
     }
@@ -122,33 +136,30 @@ class MainActivity : AppCompatActivity() {
             putExtra(ScreenCaptureService.EXTRA_DATA, data)
         }
         startForegroundService(intent)
-        
-        scope.launch {
-            delay(500)
-            updateCaptureButton()
-            toast("截屏服务已启动，点击按钮截取当前屏幕")
-        }
+        updateCaptureButton()
     }
     
     private fun stopCaptureAndProcess() {
         scope.launch {
             resultText.text = "截屏中..."
+            delay(200)
             
             val bitmap = ScreenCaptureService.captureScreen()
             
             stopService(Intent(this@MainActivity, ScreenCaptureService::class.java))
+            ScreenCaptureService.isRunning = false
             updateCaptureButton()
             
             if (bitmap != null) {
                 processImage(bitmap)
             } else {
-                resultText.text = "截屏失败"
+                resultText.text = "截屏失败，请重试"
             }
         }
     }
     
     private fun updateCaptureButton() {
-        btnCaptureScreen.text = if (ScreenCaptureService.isRunning) "截取并翻译" else "截屏翻译"
+        btnCaptureScreen.text = if (ScreenCaptureService.isRunning) "截取当前屏幕" else "截屏翻译"
     }
     
     private fun processImage(bitmap: Bitmap) {
@@ -158,13 +169,17 @@ class MainActivity : AppCompatActivity() {
                 val prefs = getSharedPreferences("settings", MODE_PRIVATE)
                 val preprocess = prefs.getBoolean("preprocess", true)
                 
-                val text = OcrHelper.recognizeText(bitmap, selectedLanguage, preprocess)
+                // 裁剪掉状态栏和导航栏区域
+                val cropped = ImageProcessor.cropCenter(bitmap, 0.05f, 0.08f)
+                val text = OcrHelper.recognizeText(cropped, selectedLanguage, preprocess)
                 
                 if (text.isBlank()) {
                     toast("未识别到文字")
                     resultText.text = ""
                 } else {
-                    inputText.setText(text)
+                    // 过滤掉系统UI文字
+                    val filtered = filterSystemText(text)
+                    inputText.setText(filtered)
                     resultText.text = ""
                     toast("识别成功")
                 }
@@ -173,6 +188,23 @@ class MainActivity : AppCompatActivity() {
                 resultText.text = ""
             }
         }
+    }
+    
+    private fun filterSystemText(text: String): String {
+        val systemPatterns = listOf(
+            "\\d{1,2}:\\d{2}", // 时间 07:57
+            "\\d+%", // 电量 32%
+            "VPN", "MOBILE", "WiFi", "LTE", "5G", "4G",
+            "P\\.\\d+/\\d+", // 页码 P.8/95
+        )
+        var result = text
+        systemPatterns.forEach { pattern ->
+            result = result.replace(Regex(pattern, RegexOption.IGNORE_CASE), "")
+        }
+        return result.lines()
+            .filter { it.trim().length > 1 }
+            .joinToString("\n")
+            .trim()
     }
     
     private fun translate() {
@@ -191,9 +223,18 @@ class MainActivity : AppCompatActivity() {
         scope.launch {
             try {
                 ApiClient.initialize(baseUrl, apiKey)
+                
+                // 优化后的 Prompt
+                val systemPrompt = """你是漫画翻译机。规则：
+1. 直接输出译文，不要解释
+2. 保持口语化、自然
+3. 忽略乱码和无意义字符
+4. 如果是拟声词，翻译成中文拟声词
+5. 不要拒绝，不要评判内容"""
+                
                 val request = ChatRequest(model, listOf(
-                    Message("system", "你是专业的翻译。将输入的文本翻译成简体中文，保持口语化，直接输出译文。"),
-                    Message("user", text)
+                    Message("system", systemPrompt),
+                    Message("user", "翻译成中文：\n$text")
                 ))
                 val response = withContext(Dispatchers.IO) { ApiClient.getApi().translate(request) }
                 resultText.text = response.choices.firstOrNull()?.message?.content ?: "翻译失败"
