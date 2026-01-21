@@ -35,3 +35,4 @@ dependencies {
     implementation("com.google.mlkit:text-recognition-korean:16.0.1")
     implementation("androidx.activity:activity-ktx:1.8.2")
 }
+
