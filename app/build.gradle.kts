@@ -10,8 +10,8 @@ android {
         applicationId = "com.yahoo.translator"
         minSdk = 26
         targetSdk = 34
-        versionCode = 11
-        versionName = "0.4.0"
+        versionCode = 12
+        versionName = "0.4.1"
     }
     buildTypes { release { isMinifyEnabled = false } }
     compileOptions {
@@ -35,4 +35,3 @@ dependencies {
     implementation("com.google.mlkit:text-recognition-korean:16.0.1")
     implementation("androidx.activity:activity-ktx:1.8.2")
 }
-
