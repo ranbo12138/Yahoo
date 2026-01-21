@@ -1,25 +1,14 @@
 package com.yahoo.translator
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.ColorMatrix
-import android.graphics.ColorMatrixColorFilter
-import android.graphics.Paint
+import android.graphics.*
 
 object ImageProcessor {
-    fun preprocess(bmp: Bitmap, enable: Boolean = true): Bitmap {
-        if (!enable) return bmp
+    fun preprocess(bmp: Bitmap): Bitmap {
         return try {
             var r = toGray(bmp)
-            r = contrast(r, 2.0f)
-            r = binarize(r, 180)
-            Logger.log("预处理完成")
+            r = contrast(r, 1.5f)
             r
-        } catch (e: Exception) {
-            Logger.log("预处理失败: ${e.message}")
-            bmp
-        }
+        } catch (_: Exception) { bmp }
     }
     
     private fun toGray(src: Bitmap): Bitmap {
@@ -41,21 +30,9 @@ object ImageProcessor {
         return r
     }
     
-    private fun binarize(src: Bitmap, th: Int): Bitmap {
-        val r = Bitmap.createBitmap(src.width, src.height, Bitmap.Config.ARGB_8888)
-        for (x in 0 until src.width) {
-            for (y in 0 until src.height) {
-                val g = Color.red(src.getPixel(x, y))
-                r.setPixel(x, y, if (g > th) Color.WHITE else Color.BLACK)
-            }
-        }
-        return r
-    }
-    
-    fun cropCenter(bmp: Bitmap, top: Float = 0.1f, bot: Float = 0.1f): Bitmap {
+    fun crop(bmp: Bitmap, top: Float = 0.08f, bot: Float = 0.1f): Bitmap {
         val t = (bmp.height * top).toInt()
-        val b = (bmp.height * bot).toInt()
-        val h = bmp.height - t - b
+        val h = bmp.height - t - (bmp.height * bot).toInt()
         return if (h > 0) Bitmap.createBitmap(bmp, 0, t, bmp.width, h) else bmp
     }
 }

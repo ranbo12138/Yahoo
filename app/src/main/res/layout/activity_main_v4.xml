@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center">
+    
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Yahoo!"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:textColor="#2196F3"
+        android:layout_marginBottom="16dp" />
+    
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="日韩漫画实时翻译"
+        android:textSize="16sp"
+        android:layout_marginBottom="32dp" />
+    
+    <TextView
+        android:id="@+id/tvStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="⏹️ 悬浮球未启动"
+        android:textSize="18sp"
+        android:layout_marginBottom="24dp" />
+    
+    <Button
+        android:id="@+id/btnStartFloat"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:text="启动悬浮球"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp" />
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_marginTop="32dp">
+        
+        <Button
+            android:id="@+id/btnSettings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="⚙️ 设置"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_marginEnd="16dp" />
+        
+        <Button
+            android:id="@+id/btnLogs"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📋 日志"
+            style="?attr/materialButtonOutlinedStyle" />
+    </LinearLayout>
+    
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="使用说明：\n1. 点击启动悬浮球\n2. 切换到漫画APP\n3. 点击悬浮球扫描翻译"
+        android:textSize="14sp"
+        android:textColor="#666666"
+        android:gravity="center"
+        android:layout_marginTop="48dp" />
+</LinearLayout>

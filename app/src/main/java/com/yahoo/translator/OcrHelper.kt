@@ -1,39 +1,45 @@
 package com.yahoo.translator
 
 import android.graphics.Bitmap
+import android.graphics.Rect
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
 import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
 import kotlinx.coroutines.tasks.await
 
+data class TextBlock(val text: String, val bounds: Rect)
+
 object OcrHelper {
-    
     enum class Language { JAPANESE, KOREAN }
     
-    suspend fun recognizeText(
-        bitmap: Bitmap,
-        language: Language,
-        preprocess: Boolean = true
-    ): String {
-        return try {
-            val processed = if (preprocess) {
-                ImageProcessor.preprocess(bitmap)
-            } else bitmap
-            
-            val image = InputImage.fromBitmap(processed, 0)
-            
-            val recognizer = when (language) {
-                Language.JAPANESE -> TextRecognition.getClient(JapaneseTextRecognizerOptions.Builder().build())
-                Language.KOREAN -> TextRecognition.getClient(KoreanTextRecognizerOptions.Builder().build())
-            }
-            
-            val result = recognizer.process(image).await()
-            Logger.log("OCR成功 (${language.name}): ${result.text.take(50)}...")
-            result.text
-        } catch (e: Exception) {
-            Logger.log("OCR失败: ${e.message}")
-            throw e
+    suspend fun recognize(bmp: Bitmap, lang: Language, preprocess: Boolean = true): String {
+        val processed = if (preprocess) ImageProcessor.preprocess(bmp) else bmp
+        val image = InputImage.fromBitmap(processed, 0)
+        val recognizer = when (lang) {
+            Language.JAPANESE -> TextRecognition.getClient(JapaneseTextRecognizerOptions.Builder().build())
+            Language.KOREAN -> TextRecognition.getClient(KoreanTextRecognizerOptions.Builder().build())
         }
+        val result = recognizer.process(image).await()
+        Logger.log("OCR: ${result.text.take(30)}...")
+        return result.text
+    }
+    
+    suspend fun recognizeWithBounds(bmp: Bitmap, lang: Language): List<TextBlock> {
+        val image = InputImage.fromBitmap(bmp, 0)
+        val recognizer = when (lang) {
+            Language.JAPANESE -> TextRecognition.getClient(JapaneseTextRecognizerOptions.Builder().build())
+            Language.KOREAN -> TextRecognition.getClient(KoreanTextRecognizerOptions.Builder().build())
+        }
+        val result = recognizer.process(image).await()
+        
+        val blocks = mutableListOf<TextBlock>()
+        for (block in result.textBlocks) {
+            block.boundingBox?.let { bounds ->
+                blocks.add(TextBlock(block.text, bounds))
+            }
+        }
+        Logger.log("OCR: ${blocks.size} blocks")
+        return blocks
     }
 }

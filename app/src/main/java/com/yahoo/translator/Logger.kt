@@ -6,13 +6,11 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 object Logger {
-    private const val PREF = "yahoo_logs"
-    private const val KEY = "logs"
     private var prefs: SharedPreferences? = null
     private val fmt = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
     
     fun init(ctx: Context) {
-        prefs = ctx.applicationContext.getSharedPreferences(PREF, Context.MODE_PRIVATE)
+        prefs = ctx.applicationContext.getSharedPreferences("logs", Context.MODE_PRIVATE)
     }
     
     fun log(msg: String) {
@@ -21,14 +19,14 @@ object Logger {
             val entry = "[${fmt.format(Date())}] $msg"
             val logs = getLogs().toMutableList().apply { add(entry) }
             while (logs.size > 500) logs.removeAt(0)
-            prefs?.edit()?.putString(KEY, logs.joinToString("\n"))?.commit()
+            prefs?.edit()?.putString("data", logs.joinToString("\n"))?.commit()
         } catch (_: Exception) {}
     }
     
     fun getLogs(): List<String> {
-        val raw = prefs?.getString(KEY, "") ?: ""
+        val raw = prefs?.getString("data", "") ?: ""
         return if (raw.isEmpty()) emptyList() else raw.split("\n")
     }
     
-    fun clear() { prefs?.edit()?.remove(KEY)?.commit() }
+    fun clear() { prefs?.edit()?.remove("data")?.commit() }
 }
