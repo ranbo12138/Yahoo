@@ -6,6 +6,6 @@ class YahooApp : Application() {
     override fun onCreate() {
         super.onCreate()
         Logger.init(this)
-        Logger.log("=== APP 启动 v0.3.1 ===")
+        Logger.log("=== APP启动 v0.3.2 ===")
     }
 }
