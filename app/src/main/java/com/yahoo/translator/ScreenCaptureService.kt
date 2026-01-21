@@ -11,7 +11,9 @@ import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.DisplayMetrics
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
@@ -26,10 +28,15 @@ class ScreenCaptureService : Service() {
         const val EXTRA_RESULT_CODE = "resultCode"
         const val EXTRA_DATA = "data"
         
+        @Volatile
         var isRunning = false
+        
         private var instance: ScreenCaptureService? = null
         
-        fun captureScreen(): Bitmap? = instance?.doCapture()
+        fun captureScreen(): Bitmap? {
+            Logger.log("尝试截屏, instance=${instance != null}, isRunning=$isRunning")
+            return instance?.doCapture()
+        }
     }
     
     private var mediaProjection: MediaProjection? = null
@@ -38,6 +45,7 @@ class ScreenCaptureService : Service() {
     private var screenWidth = 0
     private var screenHeight = 0
     private var screenDensity = 0
+    private val handler = Handler(Looper.getMainLooper())
     
     override fun onBind(intent: Intent?): IBinder? = null
     
@@ -45,9 +53,12 @@ class ScreenCaptureService : Service() {
         super.onCreate()
         instance = this
         createNotificationChannel()
+        Logger.log("ScreenCaptureService onCreate")
     }
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Logger.log("ScreenCaptureService onStartCommand: action=${intent?.action}")
+        
         when (intent?.action) {
             ACTION_START -> {
                 val resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, Activity.RESULT_CANCELED)
@@ -57,12 +68,19 @@ class ScreenCaptureService : Service() {
                     @Suppress("DEPRECATION")
                     intent.getParcelableExtra(EXTRA_DATA)
                 }
-                if (data != null) {
+                
+                Logger.log("resultCode=$resultCode, data=${data != null}")
+                
+                if (data != null && resultCode == Activity.RESULT_OK) {
                     startForeground(NOTIFICATION_ID, createNotification())
                     startCapture(resultCode, data)
+                } else {
+                    Logger.log("截屏权限数据无效")
+                    stopSelf()
                 }
             }
             ACTION_STOP -> stopCapture()
+            else -> Logger.log("未知 action: ${intent?.action}")
         }
         return START_NOT_STICKY
     }
@@ -73,7 +91,9 @@ class ScreenCaptureService : Service() {
                 CHANNEL_ID,
                 "截屏服务",
                 NotificationManager.IMPORTANCE_LOW
-            )
+            ).apply {
+                description = "用于截取屏幕进行翻译"
+            }
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(channel)
         }
@@ -81,41 +101,77 @@ class ScreenCaptureService : Service() {
     
     private fun createNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Yahoo!")
-            .setContentText("截屏服务运行中")
+            .setContentTitle("Yahoo! 截屏服务")
+            .setContentText("点击返回APP进行截取")
             .setSmallIcon(android.R.drawable.ic_menu_camera)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
             .build()
     }
     
     private fun startCapture(resultCode: Int, data: Intent) {
-        val projectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-        mediaProjection = projectionManager.getMediaProjection(resultCode, data)
-        
-        val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        val metrics = DisplayMetrics()
-        @Suppress("DEPRECATION")
-        wm.defaultDisplay.getMetrics(metrics)
-        
-        screenWidth = metrics.widthPixels
-        screenHeight = metrics.heightPixels
-        screenDensity = metrics.densityDpi
-        
-        imageReader = ImageReader.newInstance(screenWidth, screenHeight, PixelFormat.RGBA_8888, 2)
-        
-        virtualDisplay = mediaProjection?.createVirtualDisplay(
-            "YahooCapture",
-            screenWidth, screenHeight, screenDensity,
-            DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-            imageReader?.surface, null, null
-        )
-        
-        isRunning = true
-        Logger.log("截屏服务已启动: ${screenWidth}x${screenHeight}")
+        try {
+            val projectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+            mediaProjection = projectionManager.getMediaProjection(resultCode, data)
+            
+            if (mediaProjection == null) {
+                Logger.log("MediaProjection 创建失败")
+                stopSelf()
+                return
+            }
+            
+            val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            val metrics = DisplayMetrics()
+            @Suppress("DEPRECATION")
+            wm.defaultDisplay.getRealMetrics(metrics)
+            
+            screenWidth = metrics.widthPixels
+            screenHeight = metrics.heightPixels
+            screenDensity = metrics.densityDpi
+            
+            Logger.log("屏幕尺寸: ${screenWidth}x${screenHeight}, density=$screenDensity")
+            
+            imageReader = ImageReader.newInstance(screenWidth, screenHeight, PixelFormat.RGBA_8888, 2)
+            
+            virtualDisplay = mediaProjection?.createVirtualDisplay(
+                "YahooCapture",
+                screenWidth, screenHeight, screenDensity,
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                imageReader?.surface, null, handler
+            )
+            
+            if (virtualDisplay == null) {
+                Logger.log("VirtualDisplay 创建失败")
+                stopSelf()
+                return
+            }
+            
+            isRunning = true
+            Logger.log("截屏服务启动成功")
+            
+        } catch (e: Exception) {
+            Logger.log("启动截屏服务异常: ${e.message}")
+            e.printStackTrace()
+            stopSelf()
+        }
     }
     
     private fun doCapture(): Bitmap? {
-        val image = imageReader?.acquireLatestImage() ?: return null
+        Logger.log("执行截屏, imageReader=${imageReader != null}")
+        
+        if (imageReader == null) {
+            Logger.log("imageReader 为空")
+            return null
+        }
+        
+        // 等待一帧
+        Thread.sleep(100)
+        
+        val image = imageReader?.acquireLatestImage()
+        if (image == null) {
+            Logger.log("acquireLatestImage 返回 null")
+            return null
+        }
         
         return try {
             val planes = image.planes
@@ -124,18 +180,17 @@ class ScreenCaptureService : Service() {
             val rowStride = planes[0].rowStride
             val rowPadding = rowStride - pixelStride * image.width
             
-            val bitmap = Bitmap.createBitmap(
-                image.width + rowPadding / pixelStride,
-                image.height,
-                Bitmap.Config.ARGB_8888
-            )
+            val bitmapWidth = image.width + rowPadding / pixelStride
+            val bitmap = Bitmap.createBitmap(bitmapWidth, image.height, Bitmap.Config.ARGB_8888)
             bitmap.copyPixelsFromBuffer(buffer)
             
-            Bitmap.createBitmap(bitmap, 0, 0, image.width, image.height).also {
-                if (bitmap != it) bitmap.recycle()
-            }
+            val result = Bitmap.createBitmap(bitmap, 0, 0, image.width, image.height)
+            if (bitmap != result) bitmap.recycle()
+            
+            Logger.log("截屏成功: ${result.width}x${result.height}")
+            result
         } catch (e: Exception) {
-            Logger.log("截屏失败: ${e.message}")
+            Logger.log("截屏处理异常: ${e.message}")
             null
         } finally {
             image.close()
@@ -143,18 +198,25 @@ class ScreenCaptureService : Service() {
     }
     
     private fun stopCapture() {
+        Logger.log("停止截屏服务")
+        isRunning = false
+        virtualDisplay?.release()
+        virtualDisplay = null
+        imageReader?.close()
+        imageReader = null
+        mediaProjection?.stop()
+        mediaProjection = null
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
+    }
+    
+    override fun onDestroy() {
+        Logger.log("ScreenCaptureService onDestroy")
+        instance = null
         isRunning = false
         virtualDisplay?.release()
         imageReader?.close()
         mediaProjection?.stop()
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        stopSelf()
-        Logger.log("截屏服务已停止")
-    }
-    
-    override fun onDestroy() {
-        instance = null
-        stopCapture()
         super.onDestroy()
     }
 }
