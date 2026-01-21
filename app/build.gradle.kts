@@ -6,18 +6,14 @@ plugins {
 android {
     namespace = "com.yahoo.translator"
     compileSdk = 34
-    
     defaultConfig {
         applicationId = "com.yahoo.translator"
         minSdk = 26
         targetSdk = 34
-        versionCode = 6
-        versionName = "0.3.3"
+        versionCode = 7
+        versionName = "0.3.4"
     }
-    
-    buildTypes {
-        release { isMinifyEnabled = false }
-    }
+    buildTypes { release { isMinifyEnabled = false } }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8

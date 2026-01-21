@@ -34,7 +34,7 @@ class ScreenCaptureService : Service() {
     
     private val projCallback = object : MediaProjection.Callback() {
         override fun onStop() {
-            Logger.log("Projection onStop")
+            Logger.log("Projection stopped")
             cleanup()
         }
     }
@@ -66,7 +66,7 @@ class ScreenCaptureService : Service() {
                 intent.getParcelableExtra(EX_DATA, Intent::class.java)
             else @Suppress("DEPRECATION") intent.getParcelableExtra(EX_DATA)
             
-            Logger.log("code=$code, hasData=${data!=null}")
+            Logger.log("code=$code, hasData=${data!=null}, SDK=${Build.VERSION.SDK_INT}")
             if (data != null && code == Activity.RESULT_OK) startProj(code, data)
             else { Logger.log("无效数据"); stopSelf() }
         }
@@ -79,11 +79,9 @@ class ScreenCaptureService : Service() {
             mp = pm.getMediaProjection(code, data)
             if (mp == null) { Logger.log("MP null"); stopSelf(); return }
             
-            // Android 14+ 必须注册回调
-            if (Build.VERSION.SDK_INT >= 34) {
-                mp!!.registerCallback(projCallback, handler)
-                Logger.log("已注册回调")
-            }
+            // 所有版本都注册回调（Android 14+ 强制要求）
+            mp!!.registerCallback(projCallback, handler)
+            Logger.log("回调已注册")
             
             val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
             val m = DisplayMetrics()
@@ -98,6 +96,7 @@ class ScreenCaptureService : Service() {
             Logger.log("截屏服务启动成功!")
         } catch (e: Exception) {
             Logger.log("startProj异常: ${e.message}")
+            e.printStackTrace()
             stopSelf()
         }
     }
@@ -128,7 +127,7 @@ class ScreenCaptureService : Service() {
         inst = null
         vd?.release()
         ir?.close()
-        if (Build.VERSION.SDK_INT >= 34) mp?.unregisterCallback(projCallback)
+        try { mp?.unregisterCallback(projCallback) } catch (_: Exception) {}
         mp?.stop()
     }
     
