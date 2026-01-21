@@ -34,7 +34,7 @@ class ScreenCaptureService : Service() {
     
     private val projCallback = object : MediaProjection.Callback() {
         override fun onStop() {
-            Logger.log("Projection stopped")
+            Logger.log("MediaProjection onStop")
             cleanup()
         }
     }
@@ -49,7 +49,7 @@ class ScreenCaptureService : Service() {
                 NotificationChannel(CH, "Yahoo", NotificationManager.IMPORTANCE_LOW)
             )
         }
-        Logger.log("Service onCreate")
+        Logger.log("Service onCreate, SDK=${Build.VERSION.SDK_INT}")
     }
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -59,6 +59,7 @@ class ScreenCaptureService : Service() {
             .setContentText("返回APP点击截取")
             .setSmallIcon(android.R.drawable.ic_menu_camera)
             .build())
+        Logger.log("前台服务已启动")
         
         if (intent?.action == ACT) {
             val code = intent.getIntExtra(EX_CODE, Activity.RESULT_CANCELED)
@@ -66,46 +67,84 @@ class ScreenCaptureService : Service() {
                 intent.getParcelableExtra(EX_DATA, Intent::class.java)
             else @Suppress("DEPRECATION") intent.getParcelableExtra(EX_DATA)
             
-            Logger.log("code=$code, hasData=${data!=null}, SDK=${Build.VERSION.SDK_INT}")
-            if (data != null && code == Activity.RESULT_OK) startProj(code, data)
-            else { Logger.log("无效数据"); stopSelf() }
+            Logger.log("code=$code, hasData=${data!=null}")
+            if (data != null && code == Activity.RESULT_OK) {
+                startProj(code, data)
+            } else {
+                Logger.log("无效数据，停止服务")
+                stopSelf()
+            }
         }
         return START_STICKY
     }
     
     private fun startProj(code: Int, data: Intent) {
+        Logger.log("startProj开始")
         try {
             val pm = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+            Logger.log("获取MediaProjection...")
             mp = pm.getMediaProjection(code, data)
-            if (mp == null) { Logger.log("MP null"); stopSelf(); return }
             
-            // 所有版本都注册回调（Android 14+ 强制要求）
+            if (mp == null) {
+                Logger.log("MediaProjection为null")
+                stopSelf()
+                return
+            }
+            Logger.log("MediaProjection获取成功")
+            
+            // 立即注册回调（Android 14强制要求，必须在createVirtualDisplay之前）
+            Logger.log("注册回调...")
             mp!!.registerCallback(projCallback, handler)
-            Logger.log("回调已注册")
+            Logger.log("回调注册成功")
             
+            // 获取屏幕尺寸
             val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
             val m = DisplayMetrics()
             @Suppress("DEPRECATION") wm.defaultDisplay.getRealMetrics(m)
-            Logger.log("屏幕: ${m.widthPixels}x${m.heightPixels}")
+            Logger.log("屏幕: ${m.widthPixels}x${m.heightPixels}, dpi=${m.densityDpi}")
             
+            // 创建ImageReader
+            Logger.log("创建ImageReader...")
             ir = ImageReader.newInstance(m.widthPixels, m.heightPixels, PixelFormat.RGBA_8888, 2)
-            vd = mp!!.createVirtualDisplay("Y", m.widthPixels, m.heightPixels, m.densityDpi,
-                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR, ir!!.surface, null, handler)
+            Logger.log("ImageReader创建成功")
+            
+            // 创建VirtualDisplay
+            Logger.log("创建VirtualDisplay...")
+            vd = mp!!.createVirtualDisplay(
+                "YahooCapture",
+                m.widthPixels, m.heightPixels, m.densityDpi,
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                ir!!.surface,
+                null,
+                handler
+            )
+            Logger.log("VirtualDisplay创建成功")
             
             isRunning = true
-            Logger.log("截屏服务启动成功!")
+            Logger.log("截屏服务完全启动!")
+            
         } catch (e: Exception) {
-            Logger.log("startProj异常: ${e.message}")
-            e.printStackTrace()
+            Logger.log("startProj异常: ${e.javaClass.simpleName}: ${e.message}")
             stopSelf()
         }
     }
     
     private fun doCapture(): Bitmap? {
-        Logger.log("doCapture")
+        Logger.log("doCapture开始")
+        if (ir == null) {
+            Logger.log("ImageReader为null")
+            return null
+        }
+        
         try {
             Thread.sleep(200)
-            val img = ir?.acquireLatestImage() ?: return null.also { Logger.log("img null") }
+            val img = ir?.acquireLatestImage()
+            if (img == null) {
+                Logger.log("acquireLatestImage返回null")
+                return null
+            }
+            
+            Logger.log("获取到图像: ${img.width}x${img.height}")
             val buf = img.planes[0].buffer
             val ps = img.planes[0].pixelStride
             val rs = img.planes[0].rowStride
@@ -123,12 +162,13 @@ class ScreenCaptureService : Service() {
     }
     
     private fun cleanup() {
+        Logger.log("cleanup")
         isRunning = false
         inst = null
-        vd?.release()
-        ir?.close()
+        try { vd?.release() } catch (_: Exception) {}
+        try { ir?.close() } catch (_: Exception) {}
         try { mp?.unregisterCallback(projCallback) } catch (_: Exception) {}
-        mp?.stop()
+        try { mp?.stop() } catch (_: Exception) {}
     }
     
     override fun onDestroy() {

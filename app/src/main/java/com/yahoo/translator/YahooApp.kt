@@ -6,6 +6,7 @@ class YahooApp : Application() {
     override fun onCreate() {
         super.onCreate()
         Logger.init(this)
-        Logger.log("=== APP启动 v0.3.2 ===")
+        val ver = try { packageManager.getPackageInfo(packageName, 0).versionName } catch (_: Exception) { "?" }
+        Logger.log("=== APP启动 v$ver ===")
     }
 }
