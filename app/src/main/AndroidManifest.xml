@@ -21,7 +21,8 @@
             </intent-filter>
         </activity>
         <activity android:name=".SettingsActivity" />
-        <activity android:name=".LogActivity" />
+        <activity android:name=".AppLogActivity" />
+        <activity android:name=".AILogActivity" />
         
         <service
             android:name=".FloatingService"

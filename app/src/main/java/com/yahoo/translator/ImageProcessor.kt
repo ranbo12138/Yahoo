@@ -29,10 +29,4 @@ object ImageProcessor {
         })
         return r
     }
-    
-    fun crop(bmp: Bitmap, top: Float = 0.08f, bot: Float = 0.1f): Bitmap {
-        val t = (bmp.height * top).toInt()
-        val h = bmp.height - t - (bmp.height * bot).toInt()
-        return if (h > 0) Bitmap.createBitmap(bmp, 0, t, bmp.width, h) else bmp
-    }
 }

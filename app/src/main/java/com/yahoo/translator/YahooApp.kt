@@ -5,8 +5,7 @@ import android.app.Application
 class YahooApp : Application() {
     override fun onCreate() {
         super.onCreate()
-        Logger.init(this)
-        val v = try { packageManager.getPackageInfo(packageName, 0).versionName } catch (_: Exception) { "?" }
-        Logger.log("=== Yahoo! v$v ===")
+        AppLogger.init(this)
+        AILogger.init(this)
     }
 }

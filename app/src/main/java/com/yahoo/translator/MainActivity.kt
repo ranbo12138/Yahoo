@@ -15,7 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 class MainActivity : AppCompatActivity() {
     
     private val captureLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        Logger.log("授权回调: ${result.resultCode}")
+        AppLogger.log("截屏授权: ${result.resultCode}")
         if (result.resultCode == Activity.RESULT_OK && result.data != null) {
             startFloatingService(result.resultCode, result.data!!)
         } else {
@@ -27,18 +27,21 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_v4)
         
-        Logger.log("MainActivity onCreate")
+        AppLogger.log("主页: 打开")
         
         findViewById<Button>(R.id.btnStartFloat).setOnClickListener {
+            AppLogger.log("主页: 点击启动悬浮球")
             checkAndStart()
         }
         
         findViewById<Button>(R.id.btnSettings).setOnClickListener {
+            AppLogger.log("主页: 打开设置")
             startActivity(Intent(this, SettingsActivity::class.java))
         }
         
         findViewById<Button>(R.id.btnLogs).setOnClickListener {
-            startActivity(Intent(this, LogActivity::class.java))
+            AppLogger.log("主页: 打开APP日志")
+            startActivity(Intent(this, AppLogActivity::class.java))
         }
         
         updateStatus()
@@ -60,19 +63,19 @@ class MainActivity : AppCompatActivity() {
         if (FloatingService.isRunning) {
             stopService(Intent(this, FloatingService::class.java))
             FloatingService.isRunning = false
+            AppLogger.log("主页: 关闭悬浮球")
             updateStatus()
             return
         }
         
-        // 检查悬浮窗权限
         if (!Settings.canDrawOverlays(this)) {
+            AppLogger.log("主页: 请求悬浮窗权限")
             Toast.makeText(this, "请授予悬浮窗权限", Toast.LENGTH_LONG).show()
-            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, 
-                Uri.parse("package:$packageName")))
+            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
             return
         }
         
-        // 请求截屏权限
+        AppLogger.log("主页: 请求截屏权限")
         val pm = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         captureLauncher.launch(pm.createScreenCaptureIntent())
     }
@@ -84,6 +87,7 @@ class MainActivity : AppCompatActivity() {
             putExtra(FloatingService.EX_DATA, data)
             if (Build.VERSION.SDK_INT >= 26) startForegroundService(this) else startService(this)
         }
+        AppLogger.log("主页: 悬浮球服务已启动")
         Toast.makeText(this, "悬浮球已启动", Toast.LENGTH_SHORT).show()
         updateStatus()
     }

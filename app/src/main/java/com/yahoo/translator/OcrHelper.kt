@@ -21,7 +21,6 @@ object OcrHelper {
             Language.KOREAN -> TextRecognition.getClient(KoreanTextRecognizerOptions.Builder().build())
         }
         val result = recognizer.process(image).await()
-        Logger.log("OCR: ${result.text.take(30)}...")
         return result.text
     }
     
@@ -32,14 +31,8 @@ object OcrHelper {
             Language.KOREAN -> TextRecognition.getClient(KoreanTextRecognizerOptions.Builder().build())
         }
         val result = recognizer.process(image).await()
-        
-        val blocks = mutableListOf<TextBlock>()
-        for (block in result.textBlocks) {
-            block.boundingBox?.let { bounds ->
-                blocks.add(TextBlock(block.text, bounds))
-            }
+        return result.textBlocks.mapNotNull { block ->
+            block.boundingBox?.let { TextBlock(block.text, it) }
         }
-        Logger.log("OCR: ${blocks.size} blocks")
-        return blocks
     }
 }

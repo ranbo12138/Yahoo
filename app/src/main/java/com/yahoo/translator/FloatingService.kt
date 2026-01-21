@@ -44,12 +44,15 @@ class FloatingService : Service() {
     private var density = 1f
     private var isMenuOpen = false
     
-    // 缓存：防止重复翻译
     private var lastBitmap: Bitmap? = null
     private var lastTexts = mutableSetOf<String>()
     
+    // 设置
+    private var bgOpacity = 80
+    private var invertColor = false
+    
     private val projCb = object : MediaProjection.Callback() {
-        override fun onStop() { Logger.log("FLOAT: proj stopped") }
+        override fun onStop() { AppLogger.log("悬浮球: 投影停止") }
     }
     
     override fun onBind(i: Intent?): IBinder? = null
@@ -62,12 +65,20 @@ class FloatingService : Service() {
         screenH = m.heightPixels
         density = m.density
         
+        loadSettings()
+        
         if (Build.VERSION.SDK_INT >= 26) {
             getSystemService(NotificationManager::class.java).createNotificationChannel(
                 NotificationChannel(CH, "悬浮球", NotificationManager.IMPORTANCE_LOW)
             )
         }
-        Logger.log("FLOAT: onCreate ${screenW}x${screenH}")
+        AppLogger.log("悬浮球: 创建 ${screenW}x${screenH}")
+    }
+    
+    private fun loadSettings() {
+        val p = getSharedPreferences("settings", MODE_PRIVATE)
+        bgOpacity = p.getInt("opacity", 80)
+        invertColor = p.getBoolean("invert_color", false)
     }
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -85,7 +96,7 @@ class FloatingService : Service() {
                 initProjection(code, data)
                 showFloatBall()
                 isRunning = true
-                Logger.log("FLOAT: 启动成功")
+                AppLogger.log("悬浮球: 启动成功")
             }
         }
         return START_STICKY
@@ -102,7 +113,7 @@ class FloatingService : Service() {
     }
     
     private fun showFloatBall() {
-        val size = (20 * density).toInt()  // 20dp
+        val size = (25 * density).toInt()  // 25dp
         val params = WindowManager.LayoutParams(
             size, size,
             if (Build.VERSION.SDK_INT >= 26) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -115,7 +126,6 @@ class FloatingService : Service() {
             y = screenH / 3
         }
         
-        // 圆形悬浮球
         floatView = View(this).apply {
             background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
@@ -152,8 +162,8 @@ class FloatingService : Service() {
     }
     
     private fun showMenu(x: Int, y: Int) {
-        val menuW = (140 * density).toInt()
-        val menuH = (160 * density).toInt()
+        val menuW = (130 * density).toInt()
+        val menuH = (150 * density).toInt()
         
         val params = WindowManager.LayoutParams(
             menuW, menuH,
@@ -167,7 +177,6 @@ class FloatingService : Service() {
             this.y = y.coerceIn(0, screenH - menuH)
         }
         
-        // 可滚动菜单
         menuView = ScrollView(this).apply {
             setBackgroundColor(Color.WHITE)
             elevation = 8f
@@ -178,8 +187,9 @@ class FloatingService : Service() {
                 addBtn("🌐 ${if (lang == OcrHelper.Language.JAPANESE) "日语" else "韩语"}") {
                     lang = if (lang == OcrHelper.Language.JAPANESE) OcrHelper.Language.KOREAN else OcrHelper.Language.JAPANESE
                     hideMenu()
+                    Toast.makeText(this@FloatingService, "切换到${if (lang == OcrHelper.Language.JAPANESE) "日语" else "韩语"}", Toast.LENGTH_SHORT).show()
                 }
-                addBtn("⚙️ 设置") { hideMenu(); openSettings() }
+                addBtn("🗑️ 清除") { hideMenu(); clearOverlays() }
                 addBtn("❌ 关闭") { hideMenu(); stopSelf() }
             })
         }
@@ -190,8 +200,8 @@ class FloatingService : Service() {
     private fun LinearLayout.addBtn(text: String, onClick: () -> Unit) {
         addView(TextView(context).apply {
             this.text = text
-            textSize = 14f
-            setPadding(16, 12, 16, 12)
+            textSize = 13f
+            setPadding(12, 10, 12, 10)
             setOnClickListener { onClick() }
         })
     }
@@ -200,19 +210,9 @@ class FloatingService : Service() {
         menuView?.let { wm.removeView(it) }; menuView = null; isMenuOpen = false
     }
     
-    private fun openSettings() {
-        startActivity(Intent(this, SettingsActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        })
-    }
-    
     private fun startScan() {
-        Logger.log("FLOAT: 开始扫描")
-        
-        // 显示扫描线
+        AppLogger.log("悬浮球: 开始扫描")
         showScanLine()
-        
-        // 2秒后截屏
         handler.postDelayed({
             hideScanLine()
             scope.launch { doCapture() }
@@ -238,25 +238,20 @@ class FloatingService : Service() {
             private val trailPaint = Paint()
             
             init {
-                // 动画
-                val anim = android.animation.ValueAnimator.ofFloat(0f, screenH.toFloat())
-                anim.duration = 2000
-                anim.addUpdateListener {
-                    lineY = it.animatedValue as Float
-                    invalidate()
+                android.animation.ValueAnimator.ofFloat(0f, screenH.toFloat()).apply {
+                    duration = 2000
+                    addUpdateListener { lineY = it.animatedValue as Float; invalidate() }
+                    start()
                 }
-                anim.start()
             }
             
             override fun onDraw(canvas: Canvas) {
                 if (lineY <= 0) return
-                // 拖影
                 val trailH = 60 * density
                 val top = (lineY - trailH).coerceAtLeast(0f)
                 trailPaint.shader = LinearGradient(0f, top, 0f, lineY,
                     Color.TRANSPARENT, Color.parseColor("#402196F3"), Shader.TileMode.CLAMP)
                 canvas.drawRect(0f, top, width.toFloat(), lineY, trailPaint)
-                // 线
                 canvas.drawLine(0f, lineY, width.toFloat(), lineY, linePaint)
             }
         }
@@ -280,17 +275,16 @@ class FloatingService : Service() {
             val result = Bitmap.createBitmap(bmp, 0, 0, img.width, img.height)
             img.close()
             
-            // 检查是否与上次相似
             if (lastBitmap != null && isSimilar(lastBitmap!!, result, 0.9f)) {
-                Logger.log("FLOAT: 画面相似，跳过")
+                AppLogger.log("悬浮球: 画面相似，跳过")
                 return
             }
             lastBitmap = result
             
-            Logger.log("FLOAT: 处理图片")
+            AppLogger.log("悬浮球: 处理图片")
             processAndOverlay(result)
         } catch (e: Exception) {
-            Logger.log("FLOAT: 截屏异常 ${e.message}")
+            AppLogger.log("悬浮球: 截屏异常 ${e.message}")
         }
     }
     
@@ -308,13 +302,13 @@ class FloatingService : Service() {
     }
     
     private suspend fun processAndOverlay(bmp: Bitmap) {
+        loadSettings() // 重新加载设置
         clearOverlays()
         val blocks = OcrHelper.recognizeWithBounds(bmp, lang)
-        Logger.log("FLOAT: ${blocks.size} blocks")
+        AppLogger.log("悬浮球: ${blocks.size} 个文本块")
         
         for (block in blocks) {
             if (block.text.isBlank() || block.text.length < 2) continue
-            // 检查是否已翻译过
             if (lastTexts.contains(block.text)) continue
             
             val translated = translateText(block.text)
@@ -345,6 +339,14 @@ class FloatingService : Service() {
     }
     
     private fun showOverlay(bounds: Rect, text: String) {
+        // 计算字体大小（根据 bounds 高度自适应）
+        val fontSize = (bounds.height() / density / 2.5f).coerceIn(8f, 16f)
+        
+        // 计算背景颜色（带透明度）
+        val alpha = (bgOpacity * 255 / 100)
+        val bgColor = if (invertColor) Color.argb(alpha, 0, 0, 0) else Color.argb(alpha, 255, 255, 255)
+        val textColor = if (invertColor) Color.WHITE else Color.BLACK
+        
         val params = WindowManager.LayoutParams(
             bounds.width().coerceAtLeast((40 * density).toInt()),
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -359,9 +361,9 @@ class FloatingService : Service() {
         
         val tv = TextView(this).apply {
             this.text = text
-            setTextColor(Color.BLACK)  // 黑字
-            setBackgroundColor(Color.WHITE)  // 白底
-            textSize = 11f
+            setTextColor(textColor)
+            setBackgroundColor(bgColor)
+            textSize = fontSize
             setPadding(4, 2, 4, 2)
         }
         wm.addView(tv, params)
@@ -375,7 +377,7 @@ class FloatingService : Service() {
     }
     
     override fun onDestroy() {
-        Logger.log("FLOAT: onDestroy")
+        AppLogger.log("悬浮球: 销毁")
         isRunning = false
         floatView?.let { wm.removeView(it) }
         hideMenu(); hideScanLine(); clearOverlays()

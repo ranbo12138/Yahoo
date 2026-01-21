@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#FAFAFA">
     
     <LinearLayout
         android:layout_width="match_parent"
@@ -9,71 +10,110 @@
         android:orientation="vertical"
         android:padding="16dp">
         
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="API Key"
-            android:textStyle="bold" />
+        <!-- API 配置 -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="API 配置" android:textSize="18sp" android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
         
-        <EditText
-            android:id="@+id/apiKeyInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="sk-..."
-            android:inputType="textPassword" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="Base URL" android:textSize="14sp" />
+        <EditText android:id="@+id/etBaseUrl"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:hint="https://api.openai.com/v1/" android:inputType="textUri" />
         
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Base URL"
-            android:textStyle="bold" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="API Key" android:textSize="14sp" android:layout_marginTop="8dp" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <EditText android:id="@+id/etApiKey"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:hint="sk-..." android:inputType="textPassword" />
+            <Button android:id="@+id/btnCheck"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="检查" />
+        </LinearLayout>
         
-        <EditText
-            android:id="@+id/baseUrlInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="https://api.openai.com/v1/"
-            android:inputType="textUri" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="模型" android:textSize="14sp" android:layout_marginTop="8dp" />
+        <Spinner android:id="@+id/spModel"
+            android:layout_width="match_parent" android:layout_height="wrap_content" />
         
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Model"
-            android:textStyle="bold" />
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="#E0E0E0" android:layout_marginVertical="16dp" />
         
-        <EditText
-            android:id="@+id/modelInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="gpt-4o-mini" />
+        <!-- 译文样式 -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="译文样式" android:textSize="18sp" android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
         
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-            
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="图片预处理（提高识别率）"
-                android:textStyle="bold" />
-            
-            <Switch
-                android:id="@+id/preprocessSwitch"
-                android:layout_width="wrap_content"
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="背景透明度" android:textSize="14sp" />
+            <SeekBar android:id="@+id/sbOpacity"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:max="100" android:progress="80"
+                android:layout_marginHorizontal="8dp" />
+            <EditText android:id="@+id/etOpacity"
+                android:layout_width="50dp" android:layout_height="wrap_content"
+                android:text="80" android:inputType="number" android:gravity="center" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="%" />
+        </LinearLayout>
+        
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical"
+            android:layout_marginTop="8dp">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:text="颜色反转（黑底白字）" android:textSize="14sp" />
+            <Switch android:id="@+id/swInvert" android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
         </LinearLayout>
         
-        <Button
-            android:id="@+id/btnSave"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="@string/save" />
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="#E0E0E0" android:layout_marginVertical="16dp" />
+        
+        <!-- 开发者选项 -->
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="开发者选项" android:textSize="18sp" android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+        
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:text="显示日志入口" android:textSize="14sp" />
+            <Switch android:id="@+id/swDevMode" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+        
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical"
+            android:layout_marginTop="8dp">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:text="隐藏 API Key/URL（日志中）" android:textSize="14sp" />
+            <Switch android:id="@+id/swHidePrivacy" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+        
+        <LinearLayout android:id="@+id/llLogButtons"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginTop="12dp"
+            android:visibility="gone">
+            <Button android:id="@+id/btnAppLog"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:text="📋 APP日志"
+                android:layout_marginEnd="8dp" style="?attr/materialButtonOutlinedStyle" />
+            <Button android:id="@+id/btnAiLog"
+                android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:text="🤖 AI日志"
+                style="?attr/materialButtonOutlinedStyle" />
+        </LinearLayout>
+        
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="#E0E0E0" android:layout_marginVertical="16dp" />
+        
+        <Button android:id="@+id/btnSave"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:text="保存设置" />
     </LinearLayout>
 </ScrollView>
